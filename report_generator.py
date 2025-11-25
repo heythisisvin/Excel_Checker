@@ -73,6 +73,12 @@ def generate_report(analyzer_result: dict, out_path: str):
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(html)
 
+def generate_report(text, output_path="excel_report.txt"):
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return output_path
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print('Usage: python report_generator.py <analyzer_json_path> <out_report.html>')
