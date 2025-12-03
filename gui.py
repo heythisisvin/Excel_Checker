@@ -3,6 +3,8 @@ from tkinter import filedialog, messagebox, scrolledtext
 from analyzer import analyze_xlsx
 from basic_corruption_checker import check_excel_corruption
 from report_generator import generate_report
+from cleanup import remove_excel_objects
+from cleanup_styles import cleanup_excel_file
 
 
 class ExcelScannerGUI:
@@ -30,6 +32,35 @@ class ExcelScannerGUI:
         # ------------------------------
         self.btn_save = tk.Button(root, text="Save Report", command=self.save_report)
         self.btn_save.pack(pady=10)
+
+        self.cleanup_button = tk.Button(root, text="Full Cleanup", command=self.run_cleanup)
+        self.cleanup_button.pack(pady=5)
+
+        self.cleanup_styles_button = tk.Button(root, text="Cleanup Styles Only", command=self.run_cleanup_styles)
+        self.cleanup_styles_button.pack(pady=5)
+
+    def run_cleanup(self):
+        if not self.file_path:
+            messagebox.showerror("Error", "No file selected!")
+            return
+
+        try:
+            output = cleanup_excel_file(self.file_path)
+            messagebox.showinfo("Success", f"Full cleanup completed!\nSaved to:\n{output}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def run_cleanup_styles(self):
+        if not self.file_path:
+            messagebox.showerror("Error", "No file selected!")
+            return
+
+        try:
+            output = cleanup_styles_file(self.file_path)
+            messagebox.showinfo("Success", f"Style cleanup completed!\nSaved to:\n{output}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
 
     def choose_file(self):
         self.file_path = filedialog.askopenfilename(
@@ -75,3 +106,25 @@ class ExcelScannerGUI:
             messagebox.showinfo("Saved", f"Report saved to:\n{save_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save report:\n{e}")
+
+    def run_cleanup(self):
+        if not self.file_path:
+            messagebox.showerror("Error", "No file selected!")
+            return
+
+        try:
+            output = cleanup_excel_file(self.file_path)
+            messagebox.showinfo("Success", f"Full cleanup completed!\nSaved to:\n{output}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def run_cleanup_styles(self):
+        if not self.file_path:
+            messagebox.showerror("Error", "No file selected!")
+            return
+
+        try:
+            output = cleanup_styles_file(self.file_path)
+            messagebox.showinfo("Success", f"Style cleanup completed!\nSaved to:\n{output}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
