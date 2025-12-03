@@ -1,85 +1,98 @@
+# cleanup.py
+# Module to remove external links and excessive styles from an Excel workbook
+
+import openpyxl
 from openpyxl import load_workbook
 
-
-# ---------------------------
-# REMOVE EXTERNAL LINKS
-# ---------------------------
 def remove_external_links(wb):
     """
-    Removes all external links, external references, and formulas referring to other files.
+    Remove all external links from the workbook.
     """
+    if hasattr(wb, "external_links"):
+        wb.external_links = []
+    if hasattr(wb, "_external_links"):
+        wb._external_links = []
 
-    # Remove external links in defined names
-    names_to_remove = []
-    for name in wb.defined_names:
-        if name.attr_text and "!" in name.attr_text and ".xlsx" in name.attr_text.lower():
-            names_to_remove.append(name.name)
+    # Some external references are stored inside defined names
+    if hasattr(wb, "defined_names"):
+        new_names = []
+        for defined_name in wb.defined_names.definedName:
+            if "!" in defined_name.attr_text and "[" in defined_name.attr_text:
+                # This looks like an external reference
+                continue
+            new_names.append(defined_name)
 
-    for name in names_to_remove:
-        del wb.defined_names[name]
-
-    # Remove external links in sheets
-    for ws in wb.worksheets:
-        for row in ws.iter_rows():
-            for cell in row:
-                if cell.data_type == "f" and cell.value:
-                    if "[" in cell.value and "]" in cell.value:  # external reference pattern
-                        cell.value = None  # clear formula
-                        cell.data_type = "n"  # set normal type
+        wb.defined_names.definedName = new_names
 
 
-# ---------------------------
-# REMOVE EXCESSIVE STYLES
-# ---------------------------
 def remove_excessive_styles(wb):
     """
-    Removes all styles and resets cells to default to reduce file size.
+    Remove unused cell styles.
+    WARNING: openpyxl does NOT support removing styles safely at runtime.
+             Instead, the best approach is to reset style to 'Normal'.
     """
-    for ws in wb.worksheets:
-        for row in ws.iter_rows():
+    for sheet in wb.worksheets:
+        for row in sheet.iter_rows():
             for cell in row:
-                cell.style = "Normal"  # reset style
+                cell.style = "Normal"  # Reset formatting to default
 
 
-# ---------------------------
-# REMOVE OBJECTS
-# ---------------------------
-def remove_drawings(wb):
+def remove_drawing_objects(wb):
     """
-    Removes shapes, charts, images, and drawings.
+    Remove drawings, images, charts, shapes, smart art.
     """
-    for ws in wb.worksheets:
-        ws._images = []
-        ws._charts = []
-        ws._drawings = None
+
+    for sheet in wb.worksheets:
+        # Remove sheet drawings (charts/images)
+        if hasattr(sheet, "_images"):
+            sheet._images = []
+
+        if hasattr(sheet, "_charts"):
+            sheet._charts = []
+
+        if hasattr(sheet, "drawing"):
+            sheet.drawing = None
+
+        if hasattr(sheet, "_rels"):
+            sheet._rels = {}
+
+        # Remove comments
+        if hasattr(sheet, "comments"):
+            sheet.comments = []
 
 
-# ---------------------------
-# FULL CLEANUP WORKFLOW
-# ---------------------------
+def remove_pivot_caches(wb):
+    """
+    Remove pivot cache definitions (helps reduce file size).
+    """
+    if hasattr(wb, "_pivots"):
+        wb._pivots = []
+
+    if hasattr(wb, "_pivot_caches"):
+        wb._pivot_caches = []
+
+
 def cleanup_excel_file(input_file, output_file=None):
-    wb = load_workbook(input_file, data_only=False)
-
-    print("Removing external links...")
-    remove_external_links(wb)
-
-    print("Removing styles...")
-    remove_excessive_styles(wb)
-
-    print("Removing drawings / objects...")
-    remove_drawings(wb)
-
-    # Save
-    if not output_file:
+    """
+    Full cleanup pipeline:
+        - Remove external links
+        - Remove excessive styles
+        - Remove drawing objects
+        - Remove pivot caches
+    """
+    if output_file is None:
         output_file = input_file.replace(".xlsx", "_CLEANED.xlsx")
+
+    wb = load_workbook(input_file)
+
+    remove_external_links(wb)
+    remove_excessive_styles(wb)
+    remove_drawing_objects(wb)
+    remove_pivot_caches(wb)
 
     wb.save(output_file)
     return output_file
 
-
-# ---------------------------
-# STANDALONE EXECUTION
-# ---------------------------
 if __name__ == "__main__":
     import argparse
 
