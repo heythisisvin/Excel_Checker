@@ -62,7 +62,15 @@ def remove_excel_objects(input_file, output_file=None):
     finally:
         excel.Quit()
 
-
+def remove_excessive_styles(wb):
+    """
+    Reset all cell styles to Normal.
+    This reduces excessive styles and prevents Excel file bloat.
+    """
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                cell.style = "Normal"
 
 
 if __name__ == "__main__":

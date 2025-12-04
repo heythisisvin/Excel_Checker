@@ -1,9 +1,9 @@
 """basic_corruption_checker.py
-Quickly tests whether an XLSX file is a valid ZIP container and verifies common parts exist.
+Quick check whether an XLSX file is a valid ZIP container and verifies core parts exist.
 """
+
 import zipfile
 import sys
-from typing import Tuple
 
 CORE_FILES = [
     'xl/workbook.xml',
@@ -13,27 +13,37 @@ CORE_FILES = [
 ]
 
 
-def check_excel_corruption(path: str) -> Tuple[bool, str]:
+def check_excel_corruption(path: str) -> str:
+    """
+    Returns a human-readable message only (string),
+    compatible with GUI output.
+    """
     try:
         with zipfile.ZipFile(path, 'r') as z:
             bad = z.testzip()
             if bad is not None:
-                return False, f"Corrupt/Bad file entry: {bad}"
+                return f"[CORRUPT] Bad file entry detected: {bad}"
+
             names = set(z.namelist())
             missing = [f for f in CORE_FILES if f not in names]
             if missing:
-                return False, f"Missing core parts: {missing}"
-            return True, "Structure OK"
+                return f"[WARNING] Missing core components: {missing}"
+
+            return "[OK] Excel structure looks valid."
+
     except zipfile.BadZipFile:
-        return False, "Not a valid ZIP / not an XLSX file"
+        return "[ERROR] Not a valid ZIP file (Excel XLSX required)."
     except Exception as e:
-        return False, f"Exception: {e}"
+        return f"[ERROR] Exception occurred: {e}"
 
 
+# CLI execution
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print('Usage: python basic_corruption_checker.py <file.xlsx>')
+        print("Usage: python basic_corruption_checker.py <file.xlsx>")
         sys.exit(1)
+
     path = sys.argv[1]
-    ok, msg = check_xlsx_structure(path)
-    print('OK' if ok else 'CORRUPT/PROBLEM', '-', msg)
+
+    result = check_excel_corruption(path)
+    print(result)

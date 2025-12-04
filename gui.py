@@ -1,11 +1,14 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
+
 from analyzer import analyze_xlsx
 from basic_corruption_checker import check_excel_corruption
 from report_generator import generate_report
-from cleanup import remove_excel_objects
-from cleanup_styles import cleanup_excel_file
 
+# CLEANUP MODULES
+from cleanup import remove_excel_objects, remove_excessive_styles  # full cleanup
+from cleanup_styles import cleanup_styles_file                 # styles-only cleanup
+from cleanup_styles import cleanup_excel_file
 
 class ExcelScannerGUI:
     def __init__(self, root):
@@ -15,23 +18,23 @@ class ExcelScannerGUI:
         self.file_path = None
         self.analysis_result = None
 
-        # ------------------------------
-        # File selection button
-        # ------------------------------
+        # -----------------------------------
+        # Select Excel file
+        # -----------------------------------
         self.btn_select = tk.Button(root, text="Select Excel File", command=self.choose_file)
         self.btn_select.pack(pady=10)
 
-        # ------------------------------
-        # Analysis result box
-        # ------------------------------
+        # -----------------------------------
+        # Output box
+        # -----------------------------------
         self.output_box = scrolledtext.ScrolledText(root, width=80, height=20)
         self.output_box.pack(pady=10)
 
-        # ------------------------------
-        # Save report button (NEW)
-        # ------------------------------
+        # -----------------------------------
+        # Buttons
+        # -----------------------------------
         self.btn_save = tk.Button(root, text="Save Report", command=self.save_report)
-        self.btn_save.pack(pady=10)
+        self.btn_save.pack(pady=5)
 
         self.cleanup_button = tk.Button(root, text="Full Cleanup", command=self.run_cleanup)
         self.cleanup_button.pack(pady=5)
@@ -39,6 +42,9 @@ class ExcelScannerGUI:
         self.cleanup_styles_button = tk.Button(root, text="Cleanup Styles Only", command=self.run_cleanup_styles)
         self.cleanup_styles_button.pack(pady=5)
 
+    # ------------------------------------------------------------------
+    # CLEANUP FUNCTIONS
+    # ------------------------------------------------------------------
     def run_cleanup(self):
         if not self.file_path:
             messagebox.showerror("Error", "No file selected!")
@@ -46,7 +52,7 @@ class ExcelScannerGUI:
 
         try:
             output = cleanup_excel_file(self.file_path)
-            messagebox.showinfo("Success", f"Full cleanup completed!\nSaved to:\n{output}")
+            messagebox.showinfo("Success", f"Full cleanup completed.\nSaved to:\n{output}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -57,11 +63,13 @@ class ExcelScannerGUI:
 
         try:
             output = cleanup_styles_file(self.file_path)
-            messagebox.showinfo("Success", f"Style cleanup completed!\nSaved to:\n{output}")
+            messagebox.showinfo("Success", f"Style cleanup completed.\nSaved to:\n{output}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
-
+    # ------------------------------------------------------------------
+    # FILE SELECTION
+    # ------------------------------------------------------------------
     def choose_file(self):
         self.file_path = filedialog.askopenfilename(
             title="Select Excel File",
@@ -78,6 +86,7 @@ class ExcelScannerGUI:
             corruption_result = check_excel_corruption(self.file_path)
             analysis_result = analyze_xlsx(self.file_path)
 
+            # Combine both results
             self.analysis_result = f"{corruption_result}\n\n{analysis_result}"
 
             self.output_box.insert(tk.END, self.analysis_result)
@@ -85,9 +94,9 @@ class ExcelScannerGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to analyze file:\n{e}")
 
-    # -------------------------------------------------------
-    # New Button Function: Save report to a chosen directory
-    # -------------------------------------------------------
+    # ------------------------------------------------------------------
+    # SAVE REPORT
+    # ------------------------------------------------------------------
     def save_report(self):
         if not self.analysis_result:
             messagebox.showwarning("No Report", "Please analyze a file first.")
@@ -106,25 +115,3 @@ class ExcelScannerGUI:
             messagebox.showinfo("Saved", f"Report saved to:\n{save_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save report:\n{e}")
-
-    def run_cleanup(self):
-        if not self.file_path:
-            messagebox.showerror("Error", "No file selected!")
-            return
-
-        try:
-            output = cleanup_excel_file(self.file_path)
-            messagebox.showinfo("Success", f"Full cleanup completed!\nSaved to:\n{output}")
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-
-    def run_cleanup_styles(self):
-        if not self.file_path:
-            messagebox.showerror("Error", "No file selected!")
-            return
-
-        try:
-            output = cleanup_styles_file(self.file_path)
-            messagebox.showinfo("Success", f"Style cleanup completed!\nSaved to:\n{output}")
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
