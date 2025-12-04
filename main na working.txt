@@ -1,0 +1,66 @@
+import sys
+import tkinter as tk
+import argparse
+
+from gui import ExcelScannerGUI
+
+# Excel analysis modules
+from analyzer import analyze_xlsx
+from basic_corruption_checker import check_excel_corruption
+
+# Cleanup modules
+from cleanup import remove_excel_objects                     # Object cleanup (Shapes, OLE, Charts)
+from cleanup_styles import cleanup_excel_file as cleanup_styles_file   # Styles cleanup
+
+
+def run_cli():
+    parser = argparse.ArgumentParser(description="Excel Scanner CLI")
+
+    parser.add_argument("file", help="Path to Excel file")
+    parser.add_argument("--check", action="store_true", help="Check for corruption")
+    parser.add_argument("--analyze", action="store_true", help="Analyze workbook performance")
+    parser.add_argument("--cleanup_objects", action="store_true", help="Cleanup shapes, OLE, charts")
+    parser.add_argument("--cleanup_styles", action="store_true", help="Cleanup excessive styles only")
+    parser.add_argument("-o", "--output", help="Output file path")
+
+    args = parser.parse_args()
+
+    # --- CHECK CORRUPTION ---
+    if args.check:
+        print("Checking corruption...\n")
+        print(check_excel_corruption(args.file))
+        return
+
+    # --- ANALYZE PERFORMANCE ---
+    if args.analyze:
+        print("Analyzing workbook...\n")
+        print(analyze_xlsx(args.file))
+        return
+
+    # --- CLEANUP OBJECTS (Win32 COM) ---
+    if args.cleanup_objects:
+        output = remove_excel_objects(args.file)
+        print(f"Object cleanup complete → {output}")
+        return
+
+    # --- CLEANUP STYLES ONLY (OpenPyXL) ---
+    if args.cleanup_styles:
+        output = cleanup_styles_file(args.file, args.output)
+        print(f"Style cleanup complete → {output}")
+        return
+
+    print("No valid action selected. Use --help for options.")
+
+
+def run_gui():
+    root = tk.Tk()
+    app = ExcelScannerGUI(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    # If no arguments → launch GUI
+    if len(sys.argv) == 1:
+        run_gui()
+    else:
+        run_cli()
